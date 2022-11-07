@@ -49,6 +49,29 @@ return [
         ],
     ],
     'EXTENSIONS' => [
+        'backend' => [
+            'backendFavicon' => '',
+            'backendLogo' => '',
+            'loginBackgroundImage' => '',
+            'loginFootnote' => '',
+            'loginHighlightColor' => '',
+            'loginLogo' => '',
+            'loginLogoAlt' => '',
+        ],
+        'cs_seo' => [
+            'cropDescription' => '0',
+            'evaluationDoktypes' => '1',
+            'evaluators' => 'Title,Description,H1,H2,Images,Keyword',
+            'inPageModule' => '0',
+            'maxDescription' => '156',
+            'maxH2' => '6',
+            'maxNavTitle' => '50',
+            'maxTitle' => '57',
+            'minDescription' => '140',
+            'minTitle' => '40',
+            'modFileColumns' => 'title,description',
+            'useAdditionalCanonicalizedUrlParametersOnly' => '0',
+        ],
         'extensionmanager' => [
             'automaticInstallation' => '1',
             'offlineMode' => '0',
@@ -97,7 +120,7 @@ return [
             'rearrangedRedirectMiddlewares' => true,
             'unifiedPageTranslationHandling' => true,
         ],
-        'sitename' => "What's Up",
+        'sitename' => 'What\'s Up',
         'systemMaintainers' => [
             1,
         ],
