@@ -20,19 +20,17 @@ declare(strict_types=1);
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace App\Domain\Event\Model;
+namespace App\Domain;
 
-use App\Domain\AbstractEntity;
-
-class EventCategory extends AbstractEntity
+interface CustomEntityInterface
 {
-    public static function getTableName(): string
-    {
-        return 'tx_event_categories';
-    }
+    /**
+     * @return string The table name for this model to use in the database.
+     */
+    public static function getTableName(): string;
 
-    public static function getRecordType(): string
-    {
-        return static::class;
-    }
+    /**
+     * @return string The record type, if different types are used in the TCA.
+     */
+    public static function getRecordType(): string;
 }

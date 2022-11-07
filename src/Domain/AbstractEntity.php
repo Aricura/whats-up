@@ -20,19 +20,8 @@ declare(strict_types=1);
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace App\Domain\Event\Model;
+namespace App\Domain;
 
-use App\Domain\AbstractEntity;
-
-class EventCategory extends AbstractEntity
+abstract class AbstractEntity extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity implements CustomEntityInterface
 {
-    public static function getTableName(): string
-    {
-        return 'tx_event_categories';
-    }
-
-    public static function getRecordType(): string
-    {
-        return static::class;
-    }
 }

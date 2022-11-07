@@ -22,7 +22,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Event\Model;
 
-class EventLocation
+use App\Domain\AbstractEntity;
+
+class EventLocation extends AbstractEntity
 {
     public static function getTableName(): string
     {
