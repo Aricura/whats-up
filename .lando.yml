@@ -16,6 +16,7 @@ config:
                     APP_ENV: dev
                     TYPO3_CONTEXT: Development
                     MAILER_URL: 'smtp://mailhog:1025'
+            composer_version: 2
             runtime: # overrides the psh runtime, don't forget to add the extensions in the .platform.app.yaml
                 extensions:
                     - igbinary
