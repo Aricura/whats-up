@@ -1,0 +1,62 @@
+#######################
+#### PAGE TEMPLATE ####
+#######################
+page {
+    10 = TWIGTEMPLATE
+    10 {
+        template = TEXT
+        template {
+            cObject = TEXT
+            cObject {
+                data = pagelayout
+                required = 1
+                split {
+                    token = pagets__
+                    cObjNum = 1
+                    1.current = 1
+                }
+            }
+
+            ifEmpty = default
+            stdWrap.wrap = layouts/|.html.twig
+        }
+
+        ################
+        ### SETTINGS ###
+        ################
+        settings {
+            gtm = {$page.tracking.google.trackingID}
+        }
+
+        #################
+        ### VARIABLES ###
+        #################
+        variables {
+            page_title = TEXT
+            page_title.data = page:title
+
+            site_title = TEXT
+            site_title.data = site:websiteTitle
+
+            root_page = TEXT
+            root_page.data = leveluid:0
+
+            sys_language_uid = TEXT
+            sys_language_uid.data = siteLanguage:languageId
+
+            language_code = TEXT
+            language_code.data = siteLanguage:typo3Language
+
+            pagelayout = TEXT
+            pagelayout {
+                data = pagelayout
+                replacement.10 {
+                    search = pagets__
+                    replace =
+                }
+
+                ifEmpty = default
+            }
+        }
+    }
+}

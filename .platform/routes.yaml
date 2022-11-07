@@ -1,0 +1,15 @@
+"https://www.{default}/":
+    .local_url: "https://www.whats-up.lndo.site/"
+    type: upstream
+    upstream: "app:http"
+    cache:
+        enabled: false
+    tls: &tls
+        min_version: TLSv1.2
+        strict_transport_security:
+            enabled: false # TODO: set to true after a successful go-live and if all certificates are provisioned
+
+"https://{default}/":
+    type: redirect
+    to: "https://www.{default}/"
+    tls: *tls

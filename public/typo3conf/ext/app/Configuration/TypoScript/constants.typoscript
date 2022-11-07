@@ -1,0 +1,74 @@
+############################
+### CUSTOM SUBCATEGORIES ###
+###########################
+# customsubcategory=120=Meta Settings
+# customsubcategory=150=Config
+# customsubcategory=180=Tracking
+
+############
+### PAGE ###
+############
+page {
+    meta {
+        # cat=app: meta data/120/100; type=string; label=Description: Enter a short description of the page. It will be displayed in the result lists of most search engines.
+        description =
+        # cat=app: meta data/120/110; type=string; label=Author: Enter the page author's name.
+        author =
+        # cat=app: meta data/120/120; type=string; label=Keywords: Enter keywords for the page separated by commas. You may also use short phrases.
+        keywords =
+        # cat=app: meta data/120/100; type=string; label=viewport
+        viewport = width=device-width, initial-scale=1, minimum-scale=1
+        # cat=app: meta data/120/110; type=string; label=robots
+        robots = index,follow,noodp
+        # cat=app: meta data/120/120; type=string; label=apple-mobile-web-app-capable
+        apple-mobile-web-app-capable = no
+        # cat=app: meta data/120/120; type=string; label=theme-color
+        theme-color = #44E543
+        # cat=app: meta data/120/130; type=string; label=compatible
+        compatible = IE=edge
+        # cat=app: meta data/120/140; type=string; label=google
+        google = notranslate
+        # cat=app: meta data/120/150; type=string; label=google-site-verification
+        google-site-verification =
+    }
+
+    tracking {
+        google {
+            # cat=app: tracking/180/100; type=string; label=Google Tag Manager: Tracking-ID
+            trackingID =
+        }
+    }
+}
+
+##############
+### CONFIG ###
+##############
+config {
+    # cat=app: config/150/110; type=boolean; label=No Cache
+    no_cache = 0
+    # cat=app: config/150/120; type=options[Do not remove=0,Remove=1,Move to external file=external]; label=Remove default JavaScript
+    removeDefaultJS = 1
+    # cat=app: config/150/130; type=boolean; label=Compress JavaScript
+    compressJs = 1
+    # cat=app: config/150/140; type=boolean; label=Compress CSS
+    compressCss = 1
+    # cat=app: config/150/150; type=boolean; label=Concatenate JavaScript
+    concatenateJs = 1
+    # cat=app: config/150/160; type=boolean; label=Concatenate CSS
+    concatenateCss = 1
+    # cat=app: config/150/190; type=string; label=Header Comment
+    headerComment =
+    # cat=app: config/150/210; type=boolean; label=Send cache headers: Allow appropriate caching by transparent proxies and browser clients
+    sendCacheHeaders = 0
+}
+
+#############################################################
+#### EXTENSIONS                                          ####
+#### Manual inclusion to keep control over loading order ####
+#############################################################
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/FluidStyledContent/constants.typoscript" condition="[extensionLoaded('fluid_styled_content')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Feedit/constants.typoscript" condition="[extensionLoaded('feedit')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Felogin/constants.typoscript" condition="[extensionLoaded('felogin')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/IndexedSearch/constants.typoscript" condition="[extensionLoaded('indexed_search')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Solr/constants.typoscript" condition="[extensionLoaded('solr')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Seo/constants.typoscript" condition="[extensionLoaded('seo')]">

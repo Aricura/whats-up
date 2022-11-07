@@ -1,0 +1,5 @@
+##############################
+#### Fluid Styled Content ####
+##############################
+
+@import 'EXT:fluid_styled_content/Configuration/TypoScript/Helper/ContentElement.typoscript'

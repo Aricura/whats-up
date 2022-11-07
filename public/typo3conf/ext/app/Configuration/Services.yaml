@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  kernel:
+    synthetic: true
+    public: true
+
+  App\Command\FileCleanupCommand:
+    tags:
+      - name: 'console.command'
+        command: 'app:file-cleanup'
+        description: 'Removes any files matching a specific pattern from a specific directory after x days.'
+        hidden: false

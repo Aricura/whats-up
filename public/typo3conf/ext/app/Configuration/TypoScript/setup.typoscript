@@ -1,0 +1,71 @@
+################
+#### HELPER ####
+################
+@import 'EXT:app/Configuration/TypoScript/Helper/'
+
+
+#############################################################
+#### EXTENSIONS                                          ####
+#### Manual inclusion to keep control over loading order ####
+#############################################################
+## Conditional loading of typoscript files only works with the old syntax
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/FluidStyledContent/setup.typoscript" condition="[extensionLoaded('fluid_styled_content')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Feedit/setup.typoscript" condition="[extensionLoaded('feedit')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Felogin/setup.typoscript" condition="[extensionLoaded('felogin')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/IndexedSearch/setup.typoscript" condition="[extensionLoaded('indexed_search')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Solr/setup.typoscript" condition="[extensionLoaded('solr')]">
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:app/Configuration/TypoScript/Extension/Seo/setup.typoscript" condition="[extensionLoaded('seo')]">
+
+@import 'EXT:app/Configuration/TypoScript/Extension/'
+
+
+##############
+#### PAGE ####
+##############
+page = PAGE
+page {
+    typeNum = 0
+
+    bodyTagCObject = COA
+    bodyTagCObject {
+        10 = TEXT
+        10.data = TSFE:id
+        10.noTrimWrap = | id="p|"|
+        20 =< lib.page.class
+        20.stdWrap.noTrimWrap = | class="|"|
+        wrap = <body|>
+    }
+}
+
+@import 'EXT:app/Configuration/TypoScript/PageSetup/'
+
+################
+#### CONFIG ####
+################
+config {
+    absRefPrefix = auto
+    no_cache = {$config.no_cache}
+    pageTitleFirst = 1
+    pageTitleSeparator = -
+    pageTitleSeparator.noTrimWrap = | | |
+    linkVars = L(int)
+    prefixLocalAnchors = {$config.prefixLocalAnchors}
+    doctype = html5
+    removeDefaultJS = {$config.removeDefaultJS}
+    admPanel = {$config.admPanel}
+    debug = 0
+    sendCacheHeaders = {$config.sendCacheHeaders}
+    headerComment = {$config.headerComment}
+
+    // Compression and Concatenation of CSS and JS Files
+    compressJs = {$config.compressJs}
+    compressCss = {$config.compressCss}
+    concatenateJs = {$config.concatenateJs}
+    concatenateCss = {$config.concatenateCss}
+
+    additionalHeaders {
+        20.header = X-Frame-Options:SAMEORIGIN
+        30.header = X-Xss-Protection: 1; mode=block
+        40.header = X-Content-Type-Options: nosniff
+    }
+}

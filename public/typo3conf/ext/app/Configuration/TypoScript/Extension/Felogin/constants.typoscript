@@ -1,0 +1,6 @@
+########################
+#### FRONTEND LOGIN ####
+########################
+styles.content.loginform {
+    templateFile = EXT:app/Resources/Private/Templates/Felogin/FrontendLogin.html
+}

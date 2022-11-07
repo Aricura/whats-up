@@ -1,0 +1,11 @@
+##############################
+#### Fluid Styled Content ####
+##############################
+
+@import 'EXT:fluid_styled_content/Configuration/TypoScript/constants.typoscript'
+
+styles.templates {
+    templateRootPath = EXT:app/Resources/Private/Templates/FluidStyledContent/
+    partialRootPath = EXT:app/Resources/Private/Partials/FluidStyledContent/
+    layoutRootPath = EXT:app/Resources/Private/Layouts/FluidStyledContent/
+}

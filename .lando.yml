@@ -1,0 +1,46 @@
+name: whats-up
+recipe: platformsh
+config:
+    id: vayi2zzorzzys
+    xdebug: true
+    variables:
+        app:
+            php:
+                xdebug.remote_connect_back: 1
+                opcache.validate_timestamps: 1
+    overrides:
+        app:
+            variables:
+                env:
+                    APP_DEBUG: 1
+                    APP_ENV: dev
+                    TYPO3_CONTEXT: Development
+                    MAILER_URL: 'smtp://mailhog:1025'
+            runtime: # overrides the psh runtime, don't forget to add the extensions in the .platform.app.yaml
+                extensions:
+                    - igbinary
+                    - gd
+                    - redis
+                    - xdebug
+services:
+    mailhog:
+        type: mailhog:v1.0.0
+        portforward: true
+        ssl: true
+        hogfrom:
+            - app
+proxy:
+    mailhog:
+        - mailhog.whats-up.lndo.site
+tooling:
+    symfony:
+        service: app
+        cmd: php bin/console
+        description: Runs symfony commands
+    typo3:
+        service: app
+        cmd: php vendor/bin/typo3cms
+        description: Runs TYPO3 commands
+    mysqldump:
+        service: mysqldb
+        cmd: mysqldump -u user --add-drop-table main

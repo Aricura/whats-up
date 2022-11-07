@@ -1,0 +1,170 @@
+# The name of this app. Must be unique within a project.
+name: app
+
+# The type of the application to build.
+type: php:8.0
+build:
+    flavor: composer
+
+dependencies:
+    php:
+        composer/composer: '^2'
+
+variables:
+    env:
+        # Tell Symfony/TYPO3 to always install in production-mode.
+        APP_ENV: 'prod'
+        APP_DEBUG: 0
+        TYPO3_CONTEXT: 'Production'
+
+runtime:
+    xdebug:
+        idekey: PHPSTORM
+    extensions:
+        - igbinary
+        - gd
+        - redis
+    sizing_hints:
+        request_memory: 16
+        reserved_memory: 70
+
+# The relationships of the application with services or other applications.
+# The left-hand side is the name of the relationship as it will be exposed
+# to the application in the PLATFORM_RELATIONSHIPS variable. The right-hand
+# side is in the form `:`.
+relationships:
+    database: 'mysqldb:mysql'
+    rediscache: 'rediscache:redis'
+
+# The size of the persistent disk of the application (in MB).
+disk: 4096
+
+# The mounts that will be performed when the package is deployed.
+mounts:
+    'var/cache':
+        source: local
+        source_path: var/cache
+    'var/charset':
+        source: local
+        source_path: var/charset
+    'var/labels':
+        source: local
+        source_path: var/labels
+    'var/lock':
+        source: local
+        source_path: var/lock
+    'var/log':
+        source: local
+        source_path: var/log
+    'var/session':
+        source: local
+        source_path: var/session
+    'var/transient':
+        source: local
+        source_path: var/transient
+    'public/fileadmin':
+        source: local
+        source_path: fileadmin
+    'public/typo3temp':
+        source: local
+        source_path: typo3temp
+    'public/typo3conf/writeable':
+        source: local
+        source_path: typo3-config
+
+# The configuration of app when it is exposed to the web.
+web:
+    locations:
+        '/':
+            # The public directory of the app, relative to its root.
+            root: 'public'
+            # The front-controller script to send non-static requests to.
+            passthru: '/index.php'
+            index:
+                - 'index.php'
+            allow: false
+            rules:
+                # Allow access to common static files.
+                '\.(jpe?g|png|gif|svgz?|css|js|map|ico|bmp|eot|woff2?|otf|ttf)$':
+                    expires: 7d
+                    allow: true
+                '^/robots\.txt$':
+                    allow: true
+                '^/sitemap\.xml$':
+                    allow: true
+                '/Sitemap\.xsl$':
+                    allow: true
+            headers: &headerControls
+                X-Content-Type-Options: nosniff
+                X-Frame-Options: SAMEORIGIN
+                X-XSS-Protection: 1; mode=block
+        '/typo3':
+            root: 'public/typo3'
+            allow: true
+            passthru: '/typo3/index.php'
+        '/fileadmin':
+            root: 'public/fileadmin'
+            scripts: false
+            allow: true
+            passthru: '/index.php'
+            headers: *headerControls
+        '/fileadmin/_processed_':
+            root: 'public/fileadmin/_processed_'
+            expires: 1y
+            scripts: false
+            allow: true
+            passthru: false
+            headers: *headerControls
+        '/typo3temp/assets':
+            root: 'public/typo3temp/assets'
+            expires: 7d
+            scripts: false
+            allow: true
+            passthru: false
+            rules:
+                '\.js\.gzip$':
+                    headers:
+                        <<: *headerControls
+                        Content-Type: text/javascript
+                        Content-Encoding: gzip
+                '\.css\.gzip$':
+                    headers:
+                        <<: *headerControls
+                        Content-Type: text/css
+                        Content-Encoding: gzip
+        '/typo3conf/LocalConfiguration.php':
+            allow: false
+        '/typo3conf/AdditionalConfiguration.php':
+            allow: false
+
+# The hooks that will be performed when the package is deployed.
+hooks:
+    build: |
+        set -ex
+
+        cd public/typo3conf/
+        ln -sf writeable/ENABLE_INSTALL_TOOL ENABLE_INSTALL_TOOL
+    deploy: |
+        set -x
+
+        rm -rf var/cache/*
+        bin/console cache:clear --no-warmup
+        bin/console cache:warmup
+        vendor/bin/typo3cms cache:flush --group system
+
+        touch public/typo3conf/ENABLE_INSTALL_TOOL
+        vendor/bin/typo3cms extension:setup
+        vendor/bin/typo3cms database:updateschema safe
+
+        vendor/bin/typo3cms upgrade:run all
+
+        vendor/bin/typo3cms cache:flush --group pages
+    post_deploy: |
+        set -x
+        vendor/bin/typo3cms install:fixfolderstructure
+        vendor/bin/typo3cms language:update
+
+crons:
+    typo3:
+        spec: '*/5 * * * *'
+        cmd: 'vendor/bin/typo3cms scheduler:run'

@@ -1,0 +1,16 @@
+{
+    "name": "app/app",
+    "type": "typo3-cms-extension",
+    "description": "Provides app",
+    "license": "GPL-3.0+",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "typo3/cms": {
+            "cms-package-dir": "{$vendor-dir}/typo3/cms",
+            "extensions-in-vendor-dir": true,
+            "prepare-web-dir": false,
+            "extension-key": "app"
+        }
+    }
+}

@@ -1,0 +1,26 @@
+### Project
+.lando.local.yml
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/public/bundles/
+/var/*
+/vendor/
+###< symfony/framework-bundle ###
+
+###> bartacus/bartacus-bundle ###
+/public/typo3conf/*
+!/public/typo3conf/LocalConfiguration.php
+!/public/typo3conf/AdditionalConfiguration.php
+!/public/typo3conf/l10n/
+!/public/typo3conf/ext/
+/public/typo3conf/ext/*
+!/public/typo3conf/ext/app
+/public/FIRST_INSTALL
+/public/fileadmin/
+/public/typo3temp/
+/public/typo3/
+/public/index.php
+###< bartacus/bartacus-bundle ###

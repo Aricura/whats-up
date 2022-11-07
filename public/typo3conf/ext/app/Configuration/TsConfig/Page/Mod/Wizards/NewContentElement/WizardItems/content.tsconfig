@@ -1,0 +1,16 @@
+########################################################################
+# Content Wizard
+########################################################################
+mod.wizards.newContentElement.wizardItems {
+    common >
+    menu >
+    plugins >
+    content >
+    blog >
+    content {
+        header = Elements
+        show = *
+        elements {
+        }
+    }
+}

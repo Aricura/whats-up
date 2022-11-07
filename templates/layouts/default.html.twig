@@ -1,0 +1,12 @@
+{# @var settings array #}
+
+{% block header %}
+{% endblock %}
+
+{% block body %}
+    {% set content = bartacus_cobject('lib.dynamicContent', 0) %}
+    {{ content|raw }}
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

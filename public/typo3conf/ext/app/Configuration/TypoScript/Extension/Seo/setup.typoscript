@@ -1,0 +1,19 @@
+#############
+#### SEO ####
+#############
+
+@import 'EXT:seo/Configuration/TypoScript/XmlSitemap/setup.typoscript'
+
+plugin.tx_seo {
+    view {
+        templateRootPaths {
+            20 = EXT:app/Resources/Private/Templates/Seo/
+        }
+        partialRootPaths {
+            20 = EXT:app/Resources/Private/Partials/Seo/
+        }
+        layoutRootPaths {
+            20 = EXT:app/Resources/Private/Layouts/Seo/
+        }
+    }
+}

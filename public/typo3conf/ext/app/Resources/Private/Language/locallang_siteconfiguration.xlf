@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+    <file source-language="en" datatype="plaintext" original="messages" date="2018-10-17T08:20:42Z">
+        <body>
+            <trans-unit id="errorHandling.errorPageId.label">
+                <source><![CDATA[Page id]]></source>
+            </trans-unit>
+            <trans-unit id="seo.robotsTxt.label">
+                <source><![CDATA[Robots.txt content]]></source>
+            </trans-unit>
+            <trans-unit id="seo.addSitemaps.label">
+                <source><![CDATA[Add sitemap(s) to robots.txt]]></source>
+            </trans-unit>
+            <trans-unit id="site.tab.seo">
+                <source><![CDATA[SEO]]></source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

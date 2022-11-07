@@ -1,0 +1,8 @@
+@import 'EXT:app/Configuration/TsConfig/Page/TCEFORM.tsconfig'
+@import 'EXT:app/Configuration/TsConfig/Page/TCEMAIN.tsconfig'
+
+@import 'EXT:app/Configuration/TsConfig/Page/Mod/WebLayout/BackendLayouts/*.tsconfig'
+@import 'EXT:app/Configuration/TsConfig/Page/Mod/Wizards/NewContentElement/WizardItems/*.tsconfig'
+
+// Disable (Kopie 1) on content element translation for empty headers
+TCEMAIN.table.tt_content.disablePrependAtCopy = 1
