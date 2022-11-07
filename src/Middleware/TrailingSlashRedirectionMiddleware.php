@@ -26,31 +26,61 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Site\Entity\Site;
 
 class TrailingSlashRedirectionMiddleware implements MiddlewareInterface
 {
-    private const CHARACTER = '/';
+    private const EXCLUDED_PATHS = [
+        '/__webpack_hmr',
+    ];
 
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler, ): ResponseInterface
+    private const ALLOWED_EXTENSIONS = [
+        'txt',
+        'xml',
+    ];
+
+    /**
+     * Process an incoming server request.
+     *
+     * Processes an incoming server request in order to produce a response.
+     * If unable to produce the response itself, it may delegate to the provided
+     * request handler to do so.
+     */
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if ($request->getAttribute('site') instanceof Site) {
-            $path = $request->getUri()->getPath();
-            $info = pathinfo($path);
+        $httpFoundationFactory = new HttpFoundationFactory();
+        $symfonyRequest = $httpFoundationFactory->createRequest($request);
 
-            if (!isset($info['extension']) && !str_ends_with($path, static::CHARACTER)) {
-                return new RedirectResponse(
-                    $request->getUri()->withPath($path.static::CHARACTER),
-                    Response::HTTP_MOVED_PERMANENTLY,
-                    [
-                        'x-redirect-by' => 'app/trailing-slash-redirection',
-                    ],
-                );
-            }
+        $trailingSlashRedirect = $this->getTrailingSlashRedirect($symfonyRequest);
+
+        if ($trailingSlashRedirect) {
+            return new RedirectResponse($trailingSlashRedirect, Response::HTTP_MOVED_PERMANENTLY, [
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=60, s-maxage=60',
+            ]);
         }
 
+        // invoke inner middleware services and eventually the TYPO3 kernel
         return $handler->handle($request);
+    }
+
+    private function getTrailingSlashRedirect(Request $request): ?string
+    {
+        $pathInfo = $request->getPathInfo();
+        $queryInfo = $request->getQueryString();
+        $pathInfoParts = pathinfo($pathInfo);
+
+        $hasTrailingSlash = '/' === mb_substr($pathInfo, mb_strlen($pathInfo) - 1, 1);
+        if (!$hasTrailingSlash && !\in_array($pathInfoParts['extension'] ?? '', self::ALLOWED_EXTENSIONS, true)) {
+            if (\in_array($pathInfo, self::EXCLUDED_PATHS, true)) {
+                return null;
+            }
+
+            return $request->getSchemeAndHttpHost().$pathInfo.'/'.($queryInfo ? '?'.$queryInfo : '');
+        }
+
+        return null;
     }
 }

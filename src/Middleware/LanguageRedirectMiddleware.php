@@ -119,16 +119,23 @@ class LanguageRedirectMiddleware implements MiddlewareInterface
 
     protected function performRedirect(ServerRequestInterface $request, string $localizedPathSegment, int $redirectStatusCode): RedirectResponse
     {
-        // prepend the localized path segment to the current uri and force trailing slash if missing to avoid redirect-chains
-        $path = rtrim($localizedPathSegment.$request->getUri()->getPath(), '/').'/';
+        // prepend the localized path segment to the current request path
+        $requestedPath = trim($request->getUri()->getPath(), '/');
+        $localizedPathSegment = trim($localizedPathSegment, '/');
+        $newPath = '/'.$localizedPathSegment.'/'.$requestedPath;
+
+        // force trailing slash if missing to avoid redirect-chains (.ico is used for favicon.ico)
+        if (!str_ends_with($newPath, '.ico') && !str_ends_with($newPath, '/')) {
+            $newPath .= '/';
+        }
 
         // keep the request query parameters
         if ('' !== $request->getUri()->getQuery()) {
-            $path .= '?'.$request->getUri()->getQuery();
+            $newPath .= '?'.$request->getUri()->getQuery();
         }
 
         // redirect to the new uri containing the resolved language path segment
-        $redirectResponse = new RedirectResponse($path, $redirectStatusCode);
+        $redirectResponse = new RedirectResponse($newPath, $redirectStatusCode);
         $redirectResponse->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=60, s-maxage=60');
         $redirectResponse->withHeader('X-Redirect-By', 'LanguageRedirectMiddleware');
 
