@@ -4,11 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8bfb0c9975d57e39366f18522b364b94",
+    "content-hash": "ec87ff20976075494c9eae04947f3c8b",
     "packages": [
         {
             "name": "app/app",
-            "version": "dev-main",
+            "version": "dev-develop",
             "dist": {
                 "type": "path",
                 "url": "public/typo3conf/ext/app",
@@ -9641,7 +9641,8 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-json": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "ext-xml": "*"
     },
     "platform-dev": [],
     "platform-overrides": {
