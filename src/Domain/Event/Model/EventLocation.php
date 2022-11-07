@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the What's Up.
 
@@ -18,22 +20,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use App\Domain\Event\Model\Event;
-use App\Domain\Event\Model\EventCategory;
-use App\Domain\Event\Model\EventLocation;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+namespace App\Domain\Event\Model;
 
-defined('TYPO3_MODE') || exit();
+class EventLocation
+{
+    public static function getTableName(): string
+    {
+        return 'tx_event_locations';
+    }
 
-(static function (): void {
-    $GLOBALS['TBE_STYLES']['skins']['app'] = [
-        'name' => 'app',
-        'stylesheetDirectories' => [
-            'css' => 'EXT:app/Resources/Public/Css/',
-        ],
-    ];
-
-    ExtensionManagementUtility::allowTableOnStandardPages(Event::getTableName());
-    ExtensionManagementUtility::allowTableOnStandardPages(EventCategory::getTableName());
-    ExtensionManagementUtility::allowTableOnStandardPages(EventLocation::getTableName());
-})();
+    public static function getRecordType(): string
+    {
+        return static::class;
+    }
+}

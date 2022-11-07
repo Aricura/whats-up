@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the What's Up.
 
@@ -18,22 +20,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use App\Domain\Event\Model\Event;
-use App\Domain\Event\Model\EventCategory;
-use App\Domain\Event\Model\EventLocation;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+namespace App\Domain\Enum;
 
-defined('TYPO3_MODE') || exit();
+use App\Domain\AbstractBaseEnum;
 
-(static function (): void {
-    $GLOBALS['TBE_STYLES']['skins']['app'] = [
-        'name' => 'app',
-        'stylesheetDirectories' => [
-            'css' => 'EXT:app/Resources/Public/Css/',
-        ],
-    ];
-
-    ExtensionManagementUtility::allowTableOnStandardPages(Event::getTableName());
-    ExtensionManagementUtility::allowTableOnStandardPages(EventCategory::getTableName());
-    ExtensionManagementUtility::allowTableOnStandardPages(EventLocation::getTableName());
-})();
+class EventSourceEnum extends AbstractBaseEnum
+{
+    public const MANUALLY = '';
+    public const JAZZIT = 'jazzit';
+    public const ROCKHOUSE = 'rockhouse';
+}
