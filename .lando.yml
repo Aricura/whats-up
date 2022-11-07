@@ -1,7 +1,6 @@
 name: whats-up
 recipe: platformsh
 config:
-    id: vayi2zzorzzys
     xdebug: true
     variables:
         app:
