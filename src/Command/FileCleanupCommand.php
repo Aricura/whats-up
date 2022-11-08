@@ -62,16 +62,12 @@ class FileCleanupCommand extends AbstractCommand
 
         // abort if threshold is unset
         if (0 === $thresholdInDays) {
-            $output->writeln('Threshold needs to be greater than zero!');
-
-            return 255;
+            return $this->throwError('Threshold needs to be greater than zero!', $output);
         }
 
         // abort if directory or pattern is unset
         if ('' === $directory || '' === $pattern) {
-            $output->writeln('Please specify a directory path and a name pattern!');
-
-            return 255;
+            return $this->throwError('Please specify a directory path and a name pattern!', $output);
         }
 
         // get the canonicalized absolute pathname
@@ -79,9 +75,7 @@ class FileCleanupCommand extends AbstractCommand
 
         // abort if path does not exist or if project path or if outside project path (traversal path)
         if (!$path || $path === Environment::getProjectPath() || !str_starts_with($path, Environment::getProjectPath())) {
-            $output->writeln('Traversal directory paths are not permitted!');
-
-            return 255;
+            return $this->throwError('Traversal directory paths are not permitted!', $output);
         }
 
         $finder = new Finder();

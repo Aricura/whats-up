@@ -24,6 +24,9 @@ namespace App\Command;
 
 use Bartacus\Bundle\BartacusBundle\Bootstrap\SymfonyBootstrap;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Output\NullOutput;
+use Symfony\Component\Console\Output\OutputInterface;
+use TYPO3\CMS\Scheduler\FailedExecutionException;
 
 abstract class AbstractCommand extends Command
 {
@@ -31,5 +34,18 @@ abstract class AbstractCommand extends Command
     {
         /* @noinspection NullPointerExceptionInspection */
         return SymfonyBootstrap::getKernel()->getContainer()->get($identifier);
+    }
+
+    protected function throwError(string $message, OutputInterface $output): int
+    {
+        // Web execution (TYPO3 Backend)
+        if ($output instanceof NullOutput) {
+            throw new FailedExecutionException($message);
+        }
+
+        // CLI execution
+        $output->writeln($message);
+
+        return 255;
     }
 }

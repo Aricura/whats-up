@@ -14,3 +14,10 @@ services:
         command: 'app:file-cleanup'
         description: 'Removes any files matching a specific pattern from a specific directory after x days.'
         hidden: false
+
+  App\Command\EventImportCommand:
+    tags:
+      - name: 'console.command'
+        command: 'app:event-import'
+        description: 'Imports events from the specified source.'
+        hidden: false
