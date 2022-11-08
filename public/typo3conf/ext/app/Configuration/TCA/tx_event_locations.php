@@ -32,6 +32,8 @@ return [
     'ctrl' => [
         'title' => 'Event Location',
         'label' => 'name',
+        'label_alt' => 'city',
+        'label_alt_force' => true,
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
         'cruser_id' => 'cruser_id',
@@ -50,6 +52,8 @@ return [
             'additional_information',
             'phone_number',
             'email_address',
+            'website',
+            'instagram_account',
         ]),
         'hideTable' => false,
         'enablecolumns' => [
@@ -168,6 +172,31 @@ return [
                 'max' => 128,
             ],
         ],
+        'website' => [
+            'label' => 'Website',
+            'l10n_mode' => 'exclude',
+            'config' => [
+                'type' => 'input',
+                'renderType' => 'inputLink',
+            ],
+        ],
+        'facebook_url' => [
+            'label' => 'Facebook Url',
+            'l10n_mode' => 'exclude',
+            'config' => [
+                'type' => 'input',
+                'renderType' => 'inputLink',
+            ],
+        ],
+        'instagram_account' => [
+            'label' => 'Instagram Account',
+            'l10n_mode' => 'exclude',
+            'config' => [
+                'type' => 'input',
+                'eval' => 'trim',
+                'max' => 64,
+            ],
+        ],
         'online' => [
             'label' => 'Online / Virtual Location?',
             'l10n_mode' => 'exclude',
@@ -225,12 +254,19 @@ return [
             'showitem' => implode(',', [
                 'phone_number',
                 'email_address',
+                'website',
             ]),
         ],
         'geo' => [
             'showitem' => implode(',', [
                 'longitude',
                 'latitude',
+            ]),
+        ],
+        'social' => [
+            'showitem' => implode(',', [
+                'facebook_url',
+                'instagram_account',
             ]),
         ],
     ],
@@ -241,6 +277,7 @@ return [
                 '--palette--;General;general',
                 '--palette--;Address;address',
                 '--palette--;Contact;contact',
+                '--palette--;Social;social',
                 '--palette--;Geo-Location;geo',
             ]),
         ],

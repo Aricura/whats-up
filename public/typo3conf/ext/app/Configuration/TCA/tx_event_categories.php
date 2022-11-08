@@ -31,6 +31,8 @@ return [
     'ctrl' => [
         'title' => 'Event Category',
         'label' => 'title',
+        'label_alt' => 'color_code',
+        'label_alt_force' => true,
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
         'cruser_id' => 'cruser_id',
@@ -97,6 +99,17 @@ return [
                 'max' => 128,
             ],
         ],
+        'color_code' => [
+            'label' => 'Color Code (HEX)',
+            'l10n_mode' => 'exclude',
+            'config' => [
+                'type' => 'input',
+                'eval' => 'trim,required',
+                'max' => 7,
+                'default' => '#',
+                'placeholder' => '#ffaa00',
+            ],
+        ],
     ],
     'palettes' => [
         'hidden_palette' => [
@@ -109,6 +122,7 @@ return [
             'showitem' => implode(',', [
                 '--palette--;;hidden_palette',
                 'title',
+                'color_code',
             ]),
         ],
     ],

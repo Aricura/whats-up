@@ -1,5 +1,6 @@
 CREATE TABLE tx_event_categories (
-    title VARCHAR(128) NOT NULL DEFAULT '',
+    title      VARCHAR(128) NOT NULL DEFAULT '',
+    color_code VARCHAR(7)   NOT NULL DEFAULT '',
 
     INDEX title(title)
 );
@@ -13,6 +14,9 @@ CREATE TABLE tx_event_locations (
     additional_information VARCHAR(255) NOT NULL DEFAULT '',
     phone_number           VARCHAR(64)  NOT NULL DEFAULT '',
     email_address          VARCHAR(128) NOT NULL DEFAULT '',
+    website                VARCHAR(255) NOT NULL DEFAULT '',
+    facebook_url           VARCHAR(255) NOT NULL DEFAULT '',
+    instagram_account      VARCHAR(64)  NOT NULL DEFAULT '',
     online                 TINYINT(1)   NOT NULL DEFAULT 0,
     latitude               FLOAT                 DEFAULT NULL,
     longitude              FLOAT                 DEFAULT NULL,
@@ -34,7 +38,7 @@ CREATE TABLE tx_events (
     end_date                        INT(11)      NOT NULL DEFAULT 0,
     location                        INT(11)      NOT NULL DEFAULT 0,
     additional_location_information TEXT,
-    category                        INT(11)      NOT NULL DEFAULT 0,
+    categories                      VARCHAR(255) NOT NULL DEFAULT '',
     price_information               VARCHAR(255) NOT NULL DEFAULT '',
     free_of_charge                  TINYINT(1)   NOT NULL DEFAULT 0,
     sold_out                        TINYINT(1)   NOT NULL DEFAULT 0,

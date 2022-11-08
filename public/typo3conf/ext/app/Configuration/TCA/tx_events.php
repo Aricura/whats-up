@@ -36,6 +36,8 @@ return [
     'ctrl' => [
         'title' => 'Event',
         'label' => 'title',
+        'label_alt' => 'start_date',
+        'label_alt_force' => true,
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
         'cruser_id' => 'cruser_id',
@@ -208,14 +210,14 @@ return [
             'label' => 'External Url',
             'config' => [
                 'type' => 'input',
-                'eval' => 'inputLink',
+                'renderType' => 'inputLink',
             ],
         ],
         'ticket_url' => [
             'label' => 'Ticketing Url',
             'config' => [
                 'type' => 'input',
-                'eval' => 'inputLink',
+                'renderType' => 'inputLink',
             ],
         ],
         'start_date' => [
@@ -259,15 +261,15 @@ return [
                 'rows' => 5,
             ],
         ],
-        'category' => [
-            'label' => 'Category',
+        'categories' => [
+            'label' => 'Categories',
             'l10n_mode' => 'exclude',
             'config' => [
                 'type' => 'select',
-                'renderType' => 'selectSingle',
-                'items' => [
-                    ['-- unknown --', 0],
-                ],
+                'renderType' => 'selectMultipleSideBySide',
+                'items' => [],
+                'size' => 3,
+                'multiple' => false,
                 'foreign_table' => EventCategory::getTableName(),
                 'foreign_table_where' => 'AND '.EventCategory::getTableName().'.sys_language_uid IN (-1,0)',
             ],
@@ -364,8 +366,9 @@ return [
                 'title',
                 'slug',
                 '--linebreak--',
-                'category',
                 'source',
+                '--linebreak--',
+                'categories',
             ]),
         ],
         'date' => [
