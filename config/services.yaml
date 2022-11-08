@@ -36,3 +36,9 @@ services:
     # make TYPO3 LinkService public as the service is required by the StaticRouteResolver middleware
     TYPO3\CMS\Core\LinkHandling\LinkService:
         public: true
+
+    App\Import\Events\JazzitEventImport:
+        public: true
+
+    App\Import\Events\RockhouseEventImport:
+        public: true
