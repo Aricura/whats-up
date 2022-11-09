@@ -53,34 +53,36 @@ abstract class AbstractEventImport
 
         do {
             // get the next set of overview entries
-            $overviewEntries = $this->getOverviewEntries($numOverviewPagesRead);
-            if (!$overviewEntries) {
+            $eventDataList = $this->getOverviewEventDataList($numOverviewPagesRead);
+            if (!$eventDataList) {
                 // abort if no entries found on the overview page
                 break;
             }
 
             // process each overview entry
-            foreach ($overviewEntries as $index => $overviewEntry) {
-                // get all event data from the overview entry
-                $eventData = $this->getEventDataFromOverviewEntry($overviewEntry);
-                if (!$eventData) {
+            /** @var EventData $eventData */
+            foreach ($eventDataList as $eventData) {
+                // ignore this entry if mandatory data are missing
+                if (!$eventData->getUrl()) {
                     continue;
                 }
 
-                // extract the event's start day/time
-                $eventStartTimestamp = $this->extractStartTimestampFromEventData($eventData);
+                // enrich overview data with content from the detail page
+                $this->enrichEventDataFromDetailPage($eventData);
+
+                // ignore this entry if mandatory data are missing
+                if (!$eventData->getTitle() || !$eventData->getStartDatetime()) {
+                    continue;
+                }
 
                 // abort if the offset in days is reached
-                if ($eventStartTimestamp > $threshold) {
+                if ($eventData->getStartTimestamp() > $threshold) {
                     $offsetReached = true;
                     break;
                 }
 
-                // convert the event data to the database record
-                $databaseRecord = $this->convertEventDataToDatabaseRecord($eventData);
-
                 // insert / update the event data
-                $this->storeEventRecord($databaseRecord, $locationId);
+                $this->storeEventData($eventData, $locationId);
             }
 
             // increase the number of overview pages read and continue with the next page
@@ -99,29 +101,49 @@ abstract class AbstractEventImport
         return (new \DateTimeImmutable())->modify(sprintf('+ %d days', $offsetInDays))->getTimestamp();
     }
 
-    protected function getOverviewEntries(int $numOverviewPagesRead): array
+    /**
+     * @return EventData[]
+     */
+    protected function getOverviewEventDataList(int $numOverviewPagesRead): array
     {
         // fetch the event overview content (includes pagination handling)
-        $overviewUrl = $this->getOverviewUrl($numOverviewPagesRead);
-        $overviewContent = $this->fetchContentFromUrl($overviewUrl);
+        $url = $this->getOverviewUrl($numOverviewPagesRead);
+        $content = $this->fetchContentFromUrl($url);
 
-        // extract all entries from the overview content
-        return $this->extractEntriesFromOverviewContent($overviewContent);
+        // abort if no content fetched from the overview url
+        if ('' === $content) {
+            return [];
+        }
+
+        // create a DOM element based on the entire html content
+        $dom = new \DOMDocument();
+        $dom->loadHTML($content);
+
+        // extract all entries from the DOM
+        return $this->extractEventDataFromOverviewContent($dom);
     }
 
-    protected function getEventDataFromOverviewEntry(array $overviewEntry): array
+    protected function enrichEventDataFromDetailPage(EventData $eventData): void
     {
         // fetch the event's detail page content
-        $detailPageUrl = $this->extractEventUrlFromOverviewEntry($overviewEntry);
-        $detailPageContent = $this->fetchContentFromUrl($detailPageUrl);
+        $content = $this->fetchContentFromUrl($eventData->getUrl());
 
-        // extract all event data from its detail page content
-        return $this->extractEventDataFromDetailPageContent($detailPageContent, $overviewEntry);
+        // abort if no content fetched from the detail page url
+        if ('' === $content) {
+            return;
+        }
+
+        // create a DOM element based on the entire html content
+        $dom = new \DOMDocument();
+        $dom->loadHTML($content);
+
+        // enrich all event data from its detail page content
+        $this->enrichEventDataFromDetailPageContent($eventData, $dom);
     }
 
     protected function fetchContentFromUrl(string $url): string
     {
-        if (!$url) {
+        if ('' === $url) {
             return '';
         }
 
@@ -134,7 +156,7 @@ abstract class AbstractEventImport
         return (string) file_get_contents($url);
     }
 
-    protected function fetchExistingEventByDetailPageUrl(string $detailPageUrl): array
+    protected function fetchExistingEventByEventData(EventData $eventData): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(Event::getTableName());
         $queryBuilder->getRestrictions()->removeAll();
@@ -142,7 +164,7 @@ abstract class AbstractEventImport
             ->select('*')
             ->from(Event::getTableName())
             ->where($queryBuilder->expr()->eq('source', $queryBuilder->quote(static::getSource())))
-            ->andWhere($queryBuilder->expr()->eq('external_url', $queryBuilder->quote($detailPageUrl)))
+            ->andWhere($queryBuilder->expr()->eq('external_url', $queryBuilder->quote($eventData->getUrl())))
             ->orderBy('uid', QueryInterface::ORDER_DESCENDING)
             ->setMaxResults(1)
         ;
@@ -158,19 +180,32 @@ abstract class AbstractEventImport
         return \is_array($record) ? $record : [];
     }
 
-    protected function storeEventRecord(array $databaseRecord, int $locationId): void
+    protected function storeEventData(EventData $eventData, int $locationId): void
     {
-        // abort if the event has no title as we cannot generate its slug
-        if (!\array_key_exists('title', $databaseRecord) || !$databaseRecord['title']) {
-            return;
-        }
-
+        // try to fetch an existing record from the database
+        $databaseRecord = $this->fetchExistingEventByEventData($eventData);
         $isExistingRecord = \array_key_exists('uid', $databaseRecord) && $databaseRecord['uid'] > 0;
 
+        // update some event information
         $databaseRecord['pid'] = static::getEventStoragePid();
         $databaseRecord['tstamp'] = time();
         $databaseRecord['deleted'] = 0;
         $databaseRecord['location'] = $locationId;
+        $databaseRecord['title'] = (string) $eventData->getTitle();
+        $databaseRecord['external_url'] = (string) $eventData->getUrl();
+        $databaseRecord['start_date'] = (int) $eventData->getStartTimestamp();
+        $databaseRecord['end_date'] = (int) $eventData->getEndTimestamp();
+        $databaseRecord['free_of_charge'] = $eventData->isFreeOfCharge() ? 1 : 0;
+        $databaseRecord['seated'] = $eventData->getSeatedEnum();
+
+        // some information will only be set if they are unset right now as content might have been changed/added by editors
+        if (!\array_key_exists('description', $databaseRecord) && !$databaseRecord['description']) {
+            $databaseRecord['description'] = (string) $eventData->getDescription();
+        }
+
+        if (!\array_key_exists('additional_location_information', $databaseRecord) && !$databaseRecord['additional_location_information']) {
+            $databaseRecord['additional_location_information'] = (string) $eventData->getAdditionalLocationInformation();
+        }
 
         if (!$isExistingRecord) {
             $databaseRecord['crdate'] = $databaseRecord['tstamp'];
@@ -179,7 +214,7 @@ abstract class AbstractEventImport
             $databaseRecord['sorting'] = 1;
             $databaseRecord['sys_language_uid'] = 0;
             $databaseRecord['l18n_parent'] = 0;
-            $databaseRecord['slug'] = $this->slugHelper->sanitize((string) $databaseRecord['title']);
+            $databaseRecord['slug'] = $this->slugHelper->sanitize($databaseRecord['title']);
             $databaseRecord['source'] = static::getSource();
 
             // insert the new event
@@ -190,6 +225,36 @@ abstract class AbstractEventImport
             $connection = $this->connectionPool->getConnectionForTable(Event::getTableName());
             $connection->update(Event::getTableName(), $databaseRecord, ['uid' => $databaseRecord['uid']]);
         }
+    }
+
+    protected function getLocationId(): int
+    {
+        // try to find an existing location by name
+        $location = $this->fetchExistingLocationByName(static::getLocationName());
+
+        // return the id of the existing location
+        if (\array_key_exists('uid', $location) && $location['uid'] > 0) {
+            return (int) $location['uid'];
+        }
+
+        // insert the location as it does not exist yet
+        $databaseRecord = static::getLocationData();
+        $databaseRecord['name'] = static::getLocationName();
+        $databaseRecord['pid'] = static::getLocationStoragePid();
+        $databaseRecord['tstamp'] = time();
+        $databaseRecord['crdate'] = $databaseRecord['tstamp'];
+        $databaseRecord['cruser_id'] = self::CREATION_USER_ID;
+        $databaseRecord['deleted'] = 0;
+        $databaseRecord['hidden'] = 0;
+        $databaseRecord['sorting'] = 1;
+        $databaseRecord['sys_language_uid'] = 0;
+        $databaseRecord['l18n_parent'] = 0;
+
+        // insert the new location
+        $connection = $this->connectionPool->getConnectionForTable(EventLocation::getTableName());
+        $connection->insert(EventLocation::getTableName(), $databaseRecord);
+
+        return (int) $connection->lastInsertId(EventLocation::getTableName());
     }
 
     protected function fetchExistingLocationByName(string $name): array
@@ -216,23 +281,9 @@ abstract class AbstractEventImport
         return \is_array($record) ? $record : [];
     }
 
-    protected function insertNewLocation(array $databaseRecord): int
+    protected static function getSleepDuration(): int
     {
-        $databaseRecord['pid'] = static::getLocationStoragePid();
-        $databaseRecord['tstamp'] = time();
-        $databaseRecord['crdate'] = $databaseRecord['tstamp'];
-        $databaseRecord['cruser_id'] = self::CREATION_USER_ID;
-        $databaseRecord['deleted'] = 0;
-        $databaseRecord['hidden'] = 0;
-        $databaseRecord['sorting'] = 1;
-        $databaseRecord['sys_language_uid'] = 0;
-        $databaseRecord['l18n_parent'] = 0;
-
-        // insert the new location
-        $connection = $this->connectionPool->getConnectionForTable(EventLocation::getTableName());
-        $connection->insert(EventLocation::getTableName(), $databaseRecord);
-
-        return (int) $connection->lastInsertId(EventLocation::getTableName());
+        return 500;
     }
 
     protected static function getLocationStoragePid(): int
@@ -244,19 +295,16 @@ abstract class AbstractEventImport
 
     abstract protected static function getEventStoragePid(): int;
 
-    abstract protected static function getSleepDuration(): int;
+    abstract protected static function getLocationName(): string;
+
+    abstract protected static function getLocationData(): array;
 
     abstract protected function getOverviewUrl(int $numOverviewPagesRead): string;
 
-    abstract protected function extractEntriesFromOverviewContent(string $overviewContent): array;
+    /**
+     * @return EventData[]
+     */
+    abstract protected function extractEventDataFromOverviewContent(\DOMDocument $dom): array;
 
-    abstract protected function extractEventUrlFromOverviewEntry(array $overviewEntry): string;
-
-    abstract protected function extractEventDataFromDetailPageContent(string $detailPageContent, array $overviewEntry): array;
-
-    abstract protected function extractStartTimestampFromEventData(array $eventData): int;
-
-    abstract protected function convertEventDataToDatabaseRecord(array $eventData): array;
-
-    abstract protected function getLocationId(): int;
+    abstract protected function enrichEventDataFromDetailPageContent(EventData $eventData, \DOMDocument $dom): void;
 }

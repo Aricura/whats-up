@@ -38,9 +38,25 @@ class JazzitEventImport extends AbstractEventImport
         return 434;
     }
 
-    protected static function getSleepDuration(): int
+    protected static function getLocationName(): string
     {
-        return 500;
+        return 'Jazzit Musik Club';
+    }
+
+    protected static function getLocationData(): array
+    {
+        return [
+            'country_code' => CountryEnum::AUSTRIA,
+            'postal_code' => '5020',
+            'city' => 'Salzburg',
+            'street' => 'Elisabethstraße 11',
+            'additional_information' => '',
+            'phone_number' => '+43 662 883264',
+            'email_address' => 'club@jazzit.a',
+            'website' => 'https://www.jazzit.at/',
+            'facebook_url' => '',
+            'instagram_account' => '',
+        ];
     }
 
     protected function getOverviewUrl(int $numOverviewPagesRead): string
@@ -55,17 +71,11 @@ class JazzitEventImport extends AbstractEventImport
         return $url;
     }
 
-    protected function extractEntriesFromOverviewContent(string $overviewContent): array
+    /**
+     * @return EventData[]
+     */
+    protected function extractEventDataFromOverviewContent(\DOMDocument $dom): array
     {
-        // abort if no content fetched from the overview url
-        if ('' === $overviewContent) {
-            return [];
-        }
-
-        // create a DOM element based on the entire html content
-        $dom = new \DOMDocument();
-        $dom->loadHTML($overviewContent);
-
         // find the <table> containing all events as inner rows
         /** @var \DOMElement $table */
         $table = (new \DOMXPath($dom))->query("//*[contains(@class, 'eventtable')]")->item(0);
@@ -88,176 +98,88 @@ class JazzitEventImport extends AbstractEventImport
                 continue;
             }
 
-            $datetime = null;
-            $room = '';
-            $title = '';
-            $detailPageLink = '';
-            $isFreeOfCharge = null;
-            $seatedEnum = SeatedEnum::UNKNOWN;
-
-            // extract the date, time and room information from the first inner <td>
-            $columns = $row->getElementsByTagName('td');
-            if ($columns->count() > 0) {
-                // get the content without HTMl, newlines, tabs or spaces
-                $columnContent = (string) str_replace(["\t", "\n", ' '], '', strip_tags((string) $columns->item(0)->textContent));
-                // split the content into the date information and room
-                [$dateInformation, $room] = explode('|', $columnContent);
-
-                if ($dateInformation && str_contains($dateInformation, ',')) {
-                    // remove the day name from the string as its in german
-                    [, $dateStr] = explode(',', $dateInformation);
-                    if ($dateStr) {
-                        // get the date and time information
-                        [$day, $month, $year] = explode('.', substr($dateStr, 0, 10));
-                        [$hour, $minute] = explode('.', substr($dateStr, 10, 5));
-
-                        // convert the to an object
-                        $datetime = (new \DateTimeImmutable())
-                            ->setDate((int) $year, (int) $month, (int) $day)
-                            ->setTime((int) $hour, (int) $minute)
-                        ;
-                    }
-                }
-            }
-
-            // extract the title and detail page url from the first inner <a>
-            $links = $row->getElementsByTagName('a');
-            if ($links->count() > 0) {
-                $linkContent = str_replace("\t", '', strip_tags((string) $links->item(0)->textContent));
-                [$title] = explode("\n", $linkContent);
-                $detailPageLink = 'https://www.jazzit.at'.$links->item(0)->attributes['href']->value;
-            }
-
-            // extract the pricing and seated information from the first immer <img> source file name
-            $images = $row->getElementsByTagName('img');
-            if ($images->count() > 0) {
-                $pricingImageSrc = mb_strtolower((string) $images->item(0)->attributes['src']->value);
-
-                if (str_contains($pricingImageSrc, 'frei')) {
-                    $isFreeOfCharge = true;
-                } elseif (str_contains($pricingImageSrc, 'kosten')) {
-                    $isFreeOfCharge = false;
-                }
-
-                if (str_contains($pricingImageSrc, 'steh')) {
-                    $seatedEnum = SeatedEnum::STANDING;
-                } elseif (str_contains($pricingImageSrc, 'teilbestuhlt')) {
-                    $seatedEnum = SeatedEnum::PARTIALLY_SEATED;
-                } elseif (str_contains($pricingImageSrc, 'stuhl')) {
-                    $seatedEnum = SeatedEnum::SEATED;
-                }
-            }
-
-            // ignore this entry if mandatory data are missing
-            if (!$title || !$datetime || !$detailPageLink) {
-                continue;
-            }
-
-            // add a record representing all data extracted from the overview
-            $entries[] = [
-                'datetime' => $datetime,
-                'timestamp' => $datetime ? $datetime->getTimestamp() : null,
-                'room' => trim($room),
-                'title' => trim($title),
-                'url' => trim($detailPageLink),
-                'isFreeOfCharge' => $isFreeOfCharge,
-                'seatedEnum' => $seatedEnum,
-            ];
+            $entries[] = $this->processOverviewItem($row);
         }
 
         return $entries;
     }
 
-    protected function extractEventUrlFromOverviewEntry(array $overviewEntry): string
+    protected function enrichEventDataFromDetailPageContent(EventData $eventData, \DOMDocument $dom): void
     {
-        return (string) $overviewEntry['url'];
-    }
-
-    protected function extractEventDataFromDetailPageContent(string $detailPageContent, array $overviewEntry): array
-    {
-        // enrich all new fields to the overview entry as it will be returned
-        $overviewEntry['description'] = null;
-
-        // abort if no content fetched from the detail page url
-        if ('' === $detailPageContent) {
-            return $overviewEntry;
-        }
-
-        // create a DOM element based on the entire html content
-        $dom = new \DOMDocument();
-        $dom->loadHTML($detailPageContent);
-
         // find the <div> containing the event description
         /** @var \DOMElement $table */
         $div = (new \DOMXPath($dom))->query("//*[contains(@class, 'event_desc')]")->item(0);
         if (!$div) {
-            return $overviewEntry;
+            return;
         }
 
-        // add the event's description to the result
-        $overviewEntry['description'] = trim(str_replace("\t", '', strip_tags((string) $div->textContent)));
-
-        return $overviewEntry;
+        $eventData->setDescription(trim(str_replace("\t", '', strip_tags((string) $div->textContent))));
     }
 
-    protected function extractStartTimestampFromEventData(array $eventData): int
+    private function processOverviewItem(\DOMElement $row): EventData
     {
-        return (int) $eventData['timestamp'];
-    }
+        $eventData = new EventData();
 
-    protected function convertEventDataToDatabaseRecord(array $eventData): array
-    {
-        /** @var \DateTimeImmutable $datetime */
-        $datetime = $eventData['datetime'];
+        // extract the date, time and room information from the first inner <td>
+        $columns = $row->getElementsByTagName('td');
+        if ($columns->count() > 0) {
+            // get the content without HTMl, newlines, tabs or spaces
+            $columnContent = (string) str_replace(["\t", "\n", ' '], '', strip_tags((string) $columns->item(0)->textContent));
+            // split the content into the date information and room
+            [$dateInformation, $room] = explode('|', $columnContent);
+            $eventData->setAdditionalLocationInformation($room);
 
-        // try to fetch an existing record from the database
-        $databaseRecord = $this->fetchExistingEventByDetailPageUrl((string) $eventData['url']);
+            if ($dateInformation && str_contains($dateInformation, ',')) {
+                // remove the day name from the string as its in german
+                [, $dateStr] = explode(',', $dateInformation);
+                if ($dateStr) {
+                    // get the date and time information
+                    [$day, $month, $year] = explode('.', substr($dateStr, 0, 10));
+                    [$hour, $minute] = explode('.', substr($dateStr, 10, 5));
 
-        // update some event information
-        $databaseRecord['title'] = (string) $eventData['title'];
-        $databaseRecord['external_url'] = (string) $eventData['url'];
-        $databaseRecord['start_date'] = $datetime->getTimestamp();
-        $databaseRecord['end_date'] = $datetime->modify('+1 day')->setTime(4, 0)->getTimestamp();
-        $databaseRecord['free_of_charge'] = ((bool) $eventData['isFreeOfCharge']) ? 1 : 0;
-        $databaseRecord['seated'] = (int) $eventData['seatedEnum'];
+                    // convert the to an object
+                    $datetime = (new \DateTimeImmutable())
+                        ->setDate((int) $year, (int) $month, (int) $day)
+                        ->setTime((int) $hour, (int) $minute)
+                    ;
 
-        // some information will only be set if they are unset right now as content might have been changed/added by editors
-        if (!\array_key_exists('description', $databaseRecord) && !$databaseRecord['description']) {
-            $databaseRecord['description'] = (string) $eventData['description'];
+                    $eventData->setStartDatetime($datetime);
+                }
+            }
         }
 
-        if (!\array_key_exists('additional_location_information', $databaseRecord) && !$databaseRecord['additional_location_information']) {
-            $databaseRecord['additional_location_information'] = (string) $eventData['room'];
+        // extract the title and detail page url from the first inner <a>
+        $links = $row->getElementsByTagName('a');
+        if ($links->count() > 0) {
+            $linkContent = str_replace("\t", '', strip_tags((string) $links->item(0)->textContent));
+            [$title] = explode("\n", $linkContent);
+
+            $eventData->setTitle($title);
+            $eventData->setUrl('https://www.jazzit.at'.$links->item(0)->attributes['href']->value);
         }
 
-        return $databaseRecord;
-    }
+        // extract the pricing and seated information from the first immer <img> source file name
+        $images = $row->getElementsByTagName('img');
+        if ($images->count() > 0) {
+            $pricingImageSrc = mb_strtolower((string) $images->item(0)->attributes['src']->value);
 
-    protected function getLocationId(): int
-    {
-        $name = 'Jazzit Musik Club';
+            if (str_contains($pricingImageSrc, 'frei')) {
+                $eventData->setFreeOfCharge(true);
+            } elseif (str_contains($pricingImageSrc, 'kosten')) {
+                $eventData->setFreeOfCharge(false);
+            }
 
-        // try to find an existing location by name
-        $location = $this->fetchExistingLocationByName($name);
+            if (str_contains($pricingImageSrc, 'steh')) {
+                $eventData->setSeatedEnum(SeatedEnum::STANDING);
+            } elseif (str_contains($pricingImageSrc, 'teilbestuhlt')) {
+                $eventData->setSeatedEnum(SeatedEnum::PARTIALLY_SEATED);
+            } elseif (str_contains($pricingImageSrc, 'stuhl')) {
+                $eventData->setSeatedEnum(SeatedEnum::SEATED);
+            }
 
-        // return the id of the existing location
-        if (\array_key_exists('uid', $location) && $location['uid'] > 0) {
-            return (int) $location['uid'];
+
         }
 
-        // insert the location as it does not exist yet
-        return $this->insertNewLocation([
-            'name' => $name,
-            'country_code' => CountryEnum::AUSTRIA,
-            'postal_code' => '5020',
-            'city' => 'Salzburg',
-            'street' => 'Elisabethstraße 11',
-            'additional_information' => '',
-            'phone_number' => '+43 662 883264',
-            'email_address' => 'club@jazzit.a',
-            'website' => 'https://www.jazzit.at/',
-            'facebook_url' => '',
-            'instagram_account' => '',
-        ]);
+        return $eventData;
     }
 }
