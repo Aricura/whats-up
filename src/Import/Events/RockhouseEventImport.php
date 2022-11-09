@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace App\Import\Events;
 
+use App\Domain\Enum\CountryEnum;
 use App\Domain\Enum\EventSourceEnum;
 
 class RockhouseEventImport extends AbstractEventImport
@@ -36,43 +37,71 @@ class RockhouseEventImport extends AbstractEventImport
         return 438;
     }
 
-    protected static function getSleepDuration(): int
+    protected static function getLocationName(): string
     {
-        return 500;
+        return 'Rockhouse Salzburg';
+    }
+
+    protected static function getLocationData(): array
+    {
+        return [
+            'country_code' => CountryEnum::AUSTRIA,
+            'postal_code' => '5020',
+            'city' => 'Salzburg',
+            'street' => 'Schallmooser Hauptstraße 46',
+            'additional_information' => '',
+            'phone_number' => '+43-662 884914',
+            'email_address' => 'service@rockhouse.at',
+            'website' => 'https://www.rockhouse.at/',
+            'facebook_url' => '',
+            'instagram_account' => '',
+        ];
     }
 
     protected function getOverviewUrl(int $numOverviewPagesRead): string
     {
-        return '';
+        $now = new \DateTimeImmutable();
+
+        if ($numOverviewPagesRead > 0) {
+            $now = $now->modify(sprintf('+%d months', $numOverviewPagesRead));
+        }
+
+        return sprintf('https://www.rockhouse.at/Veranstaltungen/%s/%s', $now->format('Y'), $now->format('m'));
     }
 
-    protected function extractEntriesFromOverviewContent(string $overviewContent): array
+    /**
+     * @return EventData[]
+     */
+    protected function extractEventDataFromOverviewContent(\DOMDocument $dom): array
     {
-        return [];
+        // find all events by their class name
+        /** @var \DOMNodeList $events */
+        $events = (new \DOMXPath($dom))->query("//*[contains(@class, 'event')]");
+        if (!$events || 0 === $events->count()) {
+            return [];
+        }
+
+        $entries = [];
+
+        // iterate through all table rows
+        /** @var \DOMElement $eventDiv */
+        foreach ($events as $eventDiv) {
+            if (!$eventDiv || !$eventDiv->hasChildNodes()) {
+                continue;
+            }
+
+            $entries[] = $this->processOverviewItem($eventDiv);
+        }
+
+        return $entries;
     }
 
-    protected function extractEventUrlFromOverviewEntry(array $overviewEntry): string
+    protected function enrichEventDataFromDetailPageContent(EventData $eventData, \DOMDocument $dom): void
     {
-       return '';
     }
 
-    protected function extractEventDataFromDetailPageContent(string $detailPageContent, array $overviewEntry): array
+    private function processOverviewItem(\DOMElement $eventDiv): EventData
     {
-        return [];
-    }
-
-    protected function extractStartTimestampFromEventData(array $eventData): int
-    {
-        return 0;
-    }
-
-    protected function convertEventDataToDatabaseRecord(array $eventData): array
-    {
-        return [];
-    }
-
-    protected function getLocationId(): int
-    {
-        return 0;
+        return new EventData();
     }
 }
