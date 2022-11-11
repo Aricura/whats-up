@@ -29,4 +29,20 @@ class EventSourceEnum extends AbstractBaseEnum
     public const MANUALLY = '';
     public const JAZZIT = 'jazzit';
     public const ROCKHOUSE = 'rockhouse';
+
+    public static function getTcaItems(): array
+    {
+        $items = [];
+
+        foreach (self::getValues() as $source) {
+            $label = self::MANUALLY === $source
+                ? '-- inserted manually --'
+                : sprintf('Imported from %s website', $source)
+            ;
+
+            $items[] = [$label, $source];
+        }
+
+        return $items;
+    }
 }

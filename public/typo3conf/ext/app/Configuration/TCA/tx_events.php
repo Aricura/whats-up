@@ -197,11 +197,7 @@ return [
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
-                'items' => [
-                    ['-- inserted manually --', EventSourceEnum::MANUALLY],
-                    ['Imported from jazzit website', EventSourceEnum::JAZZIT],
-                    ['Imported from rockhouse website', EventSourceEnum::ROCKHOUSE],
-                ],
+                'items' => EventSourceEnum::getTcaItems(),
                 'default' => EventSourceEnum::MANUALLY,
                 'readOnly' => true,
             ],
