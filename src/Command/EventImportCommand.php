@@ -26,6 +26,7 @@ use App\Domain\Enum\EventSourceEnum;
 use App\Import\Events\AbstractEventImport;
 use App\Import\Events\JazzitEventImport;
 use App\Import\Events\RockhouseEventImport;
+use App\Import\Events\SzeneEventImport;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -66,6 +67,9 @@ class EventImportCommand extends AbstractCommand
                 break;
             case EventSourceEnum::ROCKHOUSE:
                 $importer = $this->getService(RockhouseEventImport::class);
+                break;
+            case EventSourceEnum::SZENE:
+                $importer = $this->getService(SzeneEventImport::class);
                 break;
             default:
                 return $this->throwError(sprintf('Invalid source. Use one of: %s',

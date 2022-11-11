@@ -79,9 +79,9 @@ class EventData
         $this->title = $title ? trim($title) : null;
     }
 
-    public function getUrl(): ?string
+    public function getUrl(): string
     {
-        return $this->url;
+        return (string) $this->url;
     }
 
     public function setUrl(?string $url): void

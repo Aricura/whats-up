@@ -29,6 +29,7 @@ class EventSourceEnum extends AbstractBaseEnum
     public const MANUALLY = '';
     public const JAZZIT = 'jazzit';
     public const ROCKHOUSE = 'rockhouse';
+    public const SZENE = 'szene';
 
     public static function getTcaItems(): array
     {
