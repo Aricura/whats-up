@@ -12,6 +12,11 @@ services:
         autowire: true # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
+    # make all event importer services public as they are used by the import cli command
+    _instanceof:
+        App\Import\Events\AbstractEventImport:
+            public: trie
+
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
@@ -35,10 +40,4 @@ services:
 
     # make TYPO3 LinkService public as the service is required by the StaticRouteResolver middleware
     TYPO3\CMS\Core\LinkHandling\LinkService:
-        public: true
-
-    App\Import\Events\JazzitEventImport:
-        public: true
-
-    App\Import\Events\RockhouseEventImport:
         public: true
