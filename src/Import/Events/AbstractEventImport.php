@@ -80,6 +80,10 @@ abstract class AbstractEventImport
                 $this->storeEventData($eventData, $locationId);
             }
 
+            if (!static::isOverviewPaginated()) {
+                break;
+            }
+
             // increase the number of overview pages read and continue with the next page
             ++$numOverviewPagesRead;
         } while (!$offsetReached);
@@ -300,6 +304,11 @@ abstract class AbstractEventImport
     protected static function getLocationStoragePid(): int
     {
         return 433;
+    }
+
+    protected static function isOverviewPaginated(): bool
+    {
+        return true;
     }
 
     abstract protected static function getSource(): string;
