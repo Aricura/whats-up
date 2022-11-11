@@ -172,8 +172,9 @@ abstract class AbstractEventImport
         return $response;
     }
 
-    protected function fetchExistingEventByEventData(EventData $eventData): array
+    protected function storeEventData(EventData $eventData, int $locationId): void
     {
+        // try to fetch an existing record from the database
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(Event::getTableName());
         $queryBuilder->getRestrictions()->removeAll();
         $queryBuilder
@@ -185,22 +186,18 @@ abstract class AbstractEventImport
             ->setMaxResults(1)
         ;
 
+        $isExistingRecord = false;
+
         try {
-            $record = $queryBuilder->execute()->fetchAssociative();
+            $databaseRecord = (array) $queryBuilder->execute()->fetchAssociative();
+            $isExistingRecord = \is_array($databaseRecord) && \array_key_exists('uid', $databaseRecord) && $databaseRecord['uid'] > 0;
         } catch (\Exception) {
-            return [];
         } catch (Exception) {
-            return [];
         }
 
-        return \is_array($record) ? $record : [];
-    }
-
-    protected function storeEventData(EventData $eventData, int $locationId): void
-    {
-        // try to fetch an existing record from the database
-        $databaseRecord = $this->fetchExistingEventByEventData($eventData);
-        $isExistingRecord = \array_key_exists('uid', $databaseRecord) && $databaseRecord['uid'] > 0;
+        if (!$isExistingRecord) {
+            $databaseRecord = [];
+        }
 
         // update some event information
         $databaseRecord['pid'] = static::getEventStoragePid();
