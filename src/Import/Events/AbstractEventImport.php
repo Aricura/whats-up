@@ -62,11 +62,6 @@ abstract class AbstractEventImport
             // process each overview entry
             /** @var EventData $eventData */
             foreach ($eventDataList as $eventData) {
-                // ignore this entry if mandatory data are missing
-                if (!$eventData->getUrl()) {
-                    continue;
-                }
-
                 // enrich overview data with content from the detail page
                 $this->enrichEventDataFromDetailPage($eventData);
 
