@@ -73,12 +73,21 @@ class SzeneEventImport extends AbstractEventImport
      */
     protected function extractEventDataFromOverviewContent(\DOMDocument $dom): array
     {
+        $domPath = new \DOMXPath($dom);
+
         // find all events by their class name
         /** @var \DOMNodeList $articles */
-        $articles = (new \DOMXPath($dom))->query("//*[contains(@class, 'article-list-item')]");
+        $articles = $domPath->query("//*[contains(@class, 'article-list-item')]");
         if (!$articles || 0 === $articles->count()) {
             return [];
         }
+
+        // extract all event lists as we only need to fetch them once
+        $listDates = $domPath->query("//*[contains(@class, 'list-date')]");
+        $listTitles = $domPath->query("//*[contains(@class, 'list-title')]");
+        $eventTimes = $domPath->query("//*[contains(@class, 'event-time')]",);
+        $eventLocations = $domPath->query("//*[contains(@class, 'event-loc')]",);
+        $eventGenres = $domPath->query("//*[contains(@class, 'event-genre')]",);
 
         $entries = [];
 
@@ -89,7 +98,17 @@ class SzeneEventImport extends AbstractEventImport
                 continue;
             }
 
-            $entries[] = $this->processOverviewItem($article, $index, $dom);
+            $links = $article->getElementsByTagName('a');
+            $linkItem = $links->item(0);
+
+            // extract the matching items for this article by their index
+            $dateItem = $listDates->item($index);
+            $titleItem = $listTitles->item($index);
+            $timeItem = $eventTimes->item($index);
+            $locationItem = $eventLocations->item($index);
+            $genreItem = $eventGenres->item($index);
+
+            $entries[] = $this->processOverviewItem($linkItem, $dateItem, $titleItem, $timeItem, $locationItem, $genreItem);
         }
 
         return $entries;
@@ -99,27 +118,26 @@ class SzeneEventImport extends AbstractEventImport
     {
     }
 
-    private function processOverviewItem(\DOMElement $article, int $index, \DOMDocument $dom): EventData
-    {
+    private function processOverviewItem(
+        ?\DOMElement $linkItem,
+        ?\DOMElement $dateItem,
+        ?\DOMElement $titleItem,
+        ?\DOMElement $timeItem,
+        ?\DOMElement $locationItem,
+        ?\DOMElement $genreItem
+    ): EventData {
         $eventData = new EventData();
-
-        // extract the detail page url from the first inner <a>
-        $links = $article->getElementsByTagName('a');
-        if ($links->count() > 0) {
-            $url = trim((string) $links->item(0)->attributes[1]->value);
-            $eventData->setUrl($url);
-        }
+        $eventData->setUrl($linkItem ? trim((string) $linkItem->attributes[1]->value) : null);
 
         $day = null;
         $month = null;
         $year = (int) date('Y');
 
         // extract the date
-        /** @var \DOMNodeList $listDates */
-        $listDates = (new \DOMXPath($dom))->query("//*[contains(@class, 'list-date')]", $article);
-        if ($listDates && $listDates->count() >= $index) {
-            $dateStr = trim(str_replace(' ', '', strip_tags((string) $listDates->item($index)->textContent)));
+        if ($dateItem) {
+            $dateStr = trim(str_replace(' ', '', strip_tags((string) $dateItem->textContent)));
             $dateInformation = explode('.', $dateStr);
+
             if (\is_array($dateInformation) && \count($dateInformation) >= 2) {
                 $day = (int) $dateInformation[1];
                 $month = (int) $dateInformation[2];
@@ -134,15 +152,12 @@ class SzeneEventImport extends AbstractEventImport
         }
 
         // extract the title
-        /** @var \DOMNodeList $listTitles */
-        $listTitles = (new \DOMXPath($dom))->query("//*[contains(@class, 'list-title')]", $article);
-        if ($listTitles && $listTitles->count() >= $index) {
-            $eventName = trim(strip_tags((string) $listTitles->item($index)->textContent));
-            /** @var \DOMNode $subtitleElement */
-            $subtitleElement = $listTitles->item(0)->nextSibling;
+        if ($titleItem) {
+            $eventName = trim(strip_tags((string) $titleItem->textContent));
 
-            if ($subtitleElement) {
-                $subtitle = trim(strip_tags((string) $subtitleElement->textContent));
+            if ($titleItem->nextSibling) {
+                $subtitle = trim(strip_tags((string) $titleItem->nextSibling->textContent));
+
                 if ('' !== $subtitle) {
                     $eventName .= ' - '.$subtitle;
                 }
@@ -152,10 +167,9 @@ class SzeneEventImport extends AbstractEventImport
         }
 
         // extract the start and end time
-        /** @var \DOMNodeList $eventTimes */
-        $eventTimes = (new \DOMXPath($dom))->query("//*[contains(@class, 'event-time')]", $article);
-        if ($year && $month && $day && $eventTimes && $eventTimes->count() >= $index) {
-            $eventTimeStr = trim(str_replace(' ', '', strip_tags((string) $eventTimes->item($index)->textContent)));
+        if ($year && $month && $day && $timeItem) {
+            $eventTimeStr = trim(str_replace(' ', '', strip_tags((string) $timeItem->textContent)));
+
             if (mb_strlen($eventTimeStr) > 5) {
                 [$startTime, $endTime] = explode('–', $eventTimeStr);
             } else {
@@ -175,18 +189,14 @@ class SzeneEventImport extends AbstractEventImport
         }
 
         // extract the additional event location information
-        /** @var \DOMNodeList $eventLocations */
-        $eventLocations = (new \DOMXPath($dom))->query("//*[contains(@class, 'event-loc')]", $article);
-        if ($eventLocations && $eventLocations->count() >= $index) {
-            $additionalLocationInformation = trim(strip_tags((string) $eventLocations->item($index)->textContent));
+        if ($locationItem) {
+            $additionalLocationInformation = trim(strip_tags((string) $locationItem->textContent));
             $eventData->setAdditionalLocationInformation($additionalLocationInformation);
         }
 
         // extract the genre
-        /** @var \DOMNodeList $eventGenres */
-        $eventGenres = (new \DOMXPath($dom))->query("//*[contains(@class, 'event-genre')]", $article);
-        if ($eventGenres && $eventGenres->count() >= $index) {
-            $genre = trim(strip_tags((string) $eventGenres->item($index)->textContent));
+        if ($genreItem) {
+            $genre = trim(strip_tags((string) $genreItem->textContent));
             $eventData->setGenres([$genre]);
         }
 
