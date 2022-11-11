@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace App\Import\Events;
 
 use App\Domain\Event\Model\Event;
+use App\Domain\Event\Model\EventCategory;
 use App\Domain\Event\Model\EventLocation;
 use Doctrine\DBAL\Driver\Exception;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -207,7 +208,7 @@ abstract class AbstractEventImport
         $databaseRecord['deleted'] = 0;
         $databaseRecord['location'] = $locationId;
         $databaseRecord['title'] = (string) $eventData->getTitle();
-        $databaseRecord['external_url'] = (string) $eventData->getUrl();
+        $databaseRecord['external_url'] = $eventData->getUrl();
         $databaseRecord['start_date'] = (int) $eventData->getStartTimestamp();
         $databaseRecord['end_date'] = (int) $eventData->getEndTimestamp();
         $databaseRecord['free_of_charge'] = $eventData->isFreeOfCharge() ? 1 : 0;
@@ -220,6 +221,20 @@ abstract class AbstractEventImport
 
         if (!\array_key_exists('additional_location_information', $databaseRecord) && !$databaseRecord['additional_location_information']) {
             $databaseRecord['additional_location_information'] = (string) $eventData->getAdditionalLocationInformation();
+        }
+
+        // add all genres and insert them on-the-fly if new
+        if ($eventData->getGenres()) {
+            $categoryIds = [];
+
+            foreach ($eventData->getGenres() as $genre) {
+                $categoryIds[] = $this->getGenreId($genre);
+            }
+
+            $categoryIds = array_filter($categoryIds);
+            if (\count($categoryIds) > 0) {
+                $databaseRecord['categories'] = implode(',', $categoryIds);
+            }
         }
 
         if (!$isExistingRecord) {
@@ -240,6 +255,55 @@ abstract class AbstractEventImport
             $connection = $this->connectionPool->getConnectionForTable(Event::getTableName());
             $connection->update(Event::getTableName(), $databaseRecord, ['uid' => $databaseRecord['uid']]);
         }
+    }
+
+    protected function getGenreId(string $genre): int
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(EventCategory::getTableName());
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryBuilder
+            ->select('uid')
+            ->from(EventCategory::getTableName())
+            ->where($queryBuilder->expr()->eq('title', $queryBuilder->quote($genre)))
+            ->andWhere($queryBuilder->expr()->eq('sys_language_uid', 0))
+            ->orderBy('uid', QueryInterface::ORDER_DESCENDING)
+            ->setMaxResults(1)
+        ;
+
+        try {
+            $record = $queryBuilder->execute()->fetchAssociative();
+            if (\is_array($record)) {
+                return (int) $record['uid'];
+            }
+        } catch (\Exception) {
+        } catch (Exception) {
+        }
+
+        try {
+            $colorCode = sprintf('#%02x%02x%02x', random_int(0, 255), random_int(0, 255), random_int(0, 255));
+        } catch (\Exception) {
+            $colorCode = '#000000';
+        }
+
+        // define a new category
+        $databaseRecord = [];
+        $databaseRecord['title'] = $genre;
+        $databaseRecord['color_code'] = $colorCode;
+        $databaseRecord['pid'] = static::getCategoryStoragePid();
+        $databaseRecord['tstamp'] = time();
+        $databaseRecord['crdate'] = $databaseRecord['tstamp'];
+        $databaseRecord['cruser_id'] = self::CREATION_USER_ID;
+        $databaseRecord['deleted'] = 0;
+        $databaseRecord['hidden'] = 0;
+        $databaseRecord['sorting'] = 1;
+        $databaseRecord['sys_language_uid'] = 0;
+        $databaseRecord['l18n_parent'] = 0;
+
+        // insert the new category
+        $connection = $this->connectionPool->getConnectionForTable(EventCategory::getTableName());
+        $connection->insert(EventCategory::getTableName(), $databaseRecord);
+
+        return (int) $connection->lastInsertId(EventCategory::getTableName());
     }
 
     protected function getLocationId(): int
@@ -304,6 +368,11 @@ abstract class AbstractEventImport
     protected static function getLocationStoragePid(): int
     {
         return 433;
+    }
+
+    protected static function getCategoryStoragePid(): int
+    {
+        return 432;
     }
 
     protected static function isOverviewPaginated(): bool

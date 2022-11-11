@@ -34,6 +34,7 @@ class EventData
     private int $seatedEnum = SeatedEnum::UNKNOWN;
     private ?string $description = null;
     private ?string $additionalLocationInformation = null;
+    private array $genres = [];
 
     public function getStartDatetime(): ?\DateTimeImmutable
     {
@@ -127,5 +128,20 @@ class EventData
     public function setAdditionalLocationInformation(?string $additionalLocationInformation): void
     {
         $this->additionalLocationInformation = $additionalLocationInformation ? trim($additionalLocationInformation) : null;
+    }
+
+    public function getGenres(): array
+    {
+        return array_filter($this->genres);
+    }
+
+    public function setGenres(array $genres): void
+    {
+        $this->genres = $genres;
+    }
+
+    public function addGenre(string $genre): void
+    {
+        $this->genres[] = $genre;
     }
 }

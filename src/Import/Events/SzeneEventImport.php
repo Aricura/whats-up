@@ -187,7 +187,7 @@ class SzeneEventImport extends AbstractEventImport
         $eventGenres = (new \DOMXPath($dom))->query("//*[contains(@class, 'event-genre')]", $article);
         if ($eventGenres && $eventGenres->count() >= $index) {
             $genre = trim(strip_tags((string) $eventGenres->item($index)->textContent));
-            // todo create a category based on the genre
+            $eventData->setGenres([$genre]);
         }
 
         return $eventData;
