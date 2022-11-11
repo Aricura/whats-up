@@ -153,7 +153,23 @@ abstract class AbstractEventImport
             usleep($sleepDuration);
         }
 
-        return (string) file_get_contents($url);
+        // try by file_get_contents() first
+        $response = file_get_contents($url);
+        if (\is_string($response) && '' !== $response) {
+            return $response;
+        }
+
+        // fallback try to fetch the content using curl
+        $ch = curl_init();
+        curl_setopt($ch, \CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, \CURLOPT_HTTPGET, 1);
+        curl_setopt($ch, \CURLOPT_HEADER, false);
+        curl_setopt($ch, \CURLOPT_URL, $url);
+
+        $response = (string) curl_exec($ch);
+        curl_close($ch);
+
+        return $response;
     }
 
     protected function fetchExistingEventByEventData(EventData $eventData): array
