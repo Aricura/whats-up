@@ -62,11 +62,9 @@ class EventImportCommand extends AbstractCommand
         // get importer by source name
         switch ($source) {
             case EventSourceEnum::JAZZIT:
-                /** @var AbstractEventImport $importer */
                 $importer = $this->getService(JazzitEventImport::class);
                 break;
             case EventSourceEnum::ROCKHOUSE:
-                /** @var AbstractEventImport $importer */
                 $importer = $this->getService(RockhouseEventImport::class);
                 break;
             default:
@@ -75,12 +73,13 @@ class EventImportCommand extends AbstractCommand
                 ), $output);
         }
 
-        try {
-            // execute import task
-            /** @noinspection NullPointerExceptionInspection */
-            $importer->execute($offsetInDays);
-        } catch (\Exception $exception) {
-            return $this->throwError($exception->getMessage(), $output);
+        if ($importer instanceof AbstractEventImport) {
+            try {
+                // execute import task
+                $importer->execute($offsetInDays);
+            } catch (\Exception $exception) {
+                return $this->throwError($exception->getMessage(), $output);
+            }
         }
 
         return 0;
