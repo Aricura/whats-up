@@ -309,11 +309,24 @@ abstract class AbstractEventImport
     protected function getLocationId(): int
     {
         // try to find an existing location by name
-        $location = $this->fetchExistingLocationByName(static::getLocationName());
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(EventLocation::getTableName());
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryBuilder
+            ->select('uid')
+            ->from(EventLocation::getTableName())
+            ->where($queryBuilder->expr()->eq('name', $queryBuilder->quote(static::getLocationName())))
+            ->andWhere($queryBuilder->expr()->eq('sys_language_uid', 0))
+            ->orderBy('uid', QueryInterface::ORDER_DESCENDING)
+            ->setMaxResults(1)
+        ;
 
-        // return the id of the existing location
-        if (\array_key_exists('uid', $location) && $location['uid'] > 0) {
-            return (int) $location['uid'];
+        try {
+            $record = $queryBuilder->execute()->fetchAssociative();
+            if (\is_array($record)) {
+                return (int) $record['uid'];
+            }
+        } catch (\Exception) {
+        } catch (Exception) {
         }
 
         // insert the location as it does not exist yet
@@ -334,30 +347,6 @@ abstract class AbstractEventImport
         $connection->insert(EventLocation::getTableName(), $databaseRecord);
 
         return (int) $connection->lastInsertId(EventLocation::getTableName());
-    }
-
-    protected function fetchExistingLocationByName(string $name): array
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(EventLocation::getTableName());
-        $queryBuilder->getRestrictions()->removeAll();
-        $queryBuilder
-            ->select('*')
-            ->from(EventLocation::getTableName())
-            ->where($queryBuilder->expr()->eq('name', $queryBuilder->quote($name)))
-            ->andWhere($queryBuilder->expr()->eq('sys_language_uid', 0))
-            ->orderBy('uid', QueryInterface::ORDER_DESCENDING)
-            ->setMaxResults(1)
-        ;
-
-        try {
-            $record = $queryBuilder->execute()->fetchAssociative();
-        } catch (\Exception) {
-            return [];
-        } catch (Exception) {
-            return [];
-        }
-
-        return \is_array($record) ? $record : [];
     }
 
     protected static function getSleepDuration(): int

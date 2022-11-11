@@ -28,5 +28,5 @@ class CountryEnum extends AbstractBaseEnum
 {
     public const UNKNOWN = '';
     public const AUSTRIA = 'AT';
-    public const GERMANY = 'AT';
+    public const GERMANY = 'DE';
 }
