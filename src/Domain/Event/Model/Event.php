@@ -23,9 +23,20 @@ declare(strict_types=1);
 namespace App\Domain\Event\Model;
 
 use App\Domain\AbstractEntity;
+use DateTimeImmutable;
+use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
 
 class Event extends AbstractEntity
 {
+    protected ?string $title = null;
+    protected ?string $source = null;
+    protected ?int $startDate = null;
+
+    /**
+     * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\App\Domain\Event\Model\EventLocation>
+     */
+    protected ?ObjectStorage $location = null;
+
     public static function getTableName(): string
     {
         return 'tx_events';
@@ -34,5 +45,37 @@ class Event extends AbstractEntity
     public static function getRecordType(): string
     {
         return static::class;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function getSource(): ?string
+    {
+        return $this->source;
+    }
+
+    public function getStartDate(): ?int
+    {
+        return $this->startDate;
+    }
+
+    public function getStartTime(): string
+    {
+        if (!$this->getStartDate()) {
+            return '';
+        }
+
+        $date = new DateTimeImmutable();
+        $date->setTimestamp($this->getStartDate());
+
+        return $date->format('H:i');
+    }
+
+    public function getLocation(): ?EventLocation
+    {
+        return $this->location?->offsetGet(0);
     }
 }

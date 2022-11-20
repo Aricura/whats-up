@@ -26,6 +26,16 @@ use App\Domain\AbstractEntity;
 
 class EventLocation extends AbstractEntity
 {
+    private const COLORS = [
+        'green',
+        'blue',
+        'yellow',
+        'orange',
+        'red',
+    ];
+
+    protected ?string $name = null;
+
     public static function getTableName(): string
     {
         return 'tx_event_locations';
@@ -34,5 +44,15 @@ class EventLocation extends AbstractEntity
     public static function getRecordType(): string
     {
         return static::class;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function getColor(): string
+    {
+        return self::COLORS[$this->getUid()] ?? 'green';
     }
 }

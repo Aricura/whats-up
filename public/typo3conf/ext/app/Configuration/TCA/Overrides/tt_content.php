@@ -20,9 +20,11 @@ declare(strict_types=1);
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+
 defined('TYPO3_MODE') || exit();
 
-call_user_func(static function (): void {
+call_user_func(static function ($_EXTKEY): void {
     // Fields
 
     //<editor-fold desc="Field: header" defaultstate="collapsed">
@@ -43,4 +45,19 @@ call_user_func(static function (): void {
     $GLOBALS['TCA']['tt_content']['columns']['bodytext']['config']['enableRichtext'] = true;
     //</editor-fold>
 
-});
+    // Elements
+
+    // <editor-fold desc="Element: Calendar" defaultstate="collapsed">
+    $currentElement = 'app_calendar';
+    $GLOBALS['TCA']['tt_content']['types'][$currentElement]['showitem'] = 'CType, header';
+    ExtensionManagementUtility::addPlugin(
+        [
+            'Event: Calendar',
+            $currentElement,
+            'actions-calendar',
+        ],
+        'CType',
+        $_EXTKEY
+    );
+    // </editor-fold>
+}, 'app');

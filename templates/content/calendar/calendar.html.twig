@@ -1,0 +1,20 @@
+{# @var eventJs string #}
+
+{# https://www.sliderrevolution.com/resources/html-calendar/#h-event-calendar-widget #}
+<div id="calendar"></div>
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.5.1/moment.min.js"></script>
+
+<style type="text/css">
+    {% include 'content/calendar/_calendar.css.twig' only %}
+</style>
+
+<script type="text/javascript">
+    {% include 'content/calendar/_calendar.js.twig' only %}
+</script>
+
+<script type="text/javascript">
+    !function() {
+        var data = {{ eventJs|raw }};
+        var calendar = new Calendar('#calendar', data);
+    }();
+</script>
