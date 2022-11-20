@@ -51,11 +51,12 @@ class CalendarController extends AbstractController
         /** @var Event $event */
         foreach ($events as $event) {
             $eventJs .= sprintf(
-                "{ eventName: '%s - %s', calendar: '%s', color: '%s' },",
+                "{ eventName: '%s - %s', calendar: '%s', color: '%s', datetime: '%d' },",
                 str_replace(['{', '}', "'"], '', $event->getTitle()),
                 $event->getStartTime(),
                 $event->getLocation()?->getName(),
                 $event->getLocation()?->getColor(),
+                $event->getStartDate(),
             );
         }
 
