@@ -21,3 +21,10 @@ services:
         command: 'app:event-import'
         description: 'Imports events from the specified source.'
         hidden: false
+
+  App\Command\EventCleanupCommand:
+    tags:
+      - name: 'console.command'
+        command: 'app:event-cleanup'
+        description: 'Cleans up all outdated events.'
+        hidden: false

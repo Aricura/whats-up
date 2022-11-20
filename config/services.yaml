@@ -34,6 +34,10 @@ services:
         resource: '../src/Middleware/*'
         tags: ['bartacus.make_instance']
 
+    # make public as its executed from a CLI command
+    App\Import\Events\EventCleanupService:
+        public: true
+
     # make TYPO3 RequestFactory public as the service is required by the StaticRouteResolver middleware
     TYPO3\CMS\Core\Http\RequestFactory:
         public: true
